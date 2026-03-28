@@ -105,10 +105,10 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Configuration (Environment variables provided by the system)
+        // Firebase Configuration
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -118,12 +118,16 @@
         let currentUser = null;
         let allDonations = [];
         let currentView = 'home';
+        let unsubscribeDonations = null;
 
-        // 1. Authentication
+        // 1. Authentication - FIXED: Await auth before anything else
         async function initAuth() {
             try {
-                // For simplicity in HTML, we use anonymous sign in
-                await signInAnonymously(auth);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
             } catch (error) {
                 console.error("Auth Error:", error);
             }
@@ -132,30 +136,38 @@
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
+                // Solo escuchamos Firestore si hay usuario
                 setupRealtimeListener();
+            } else if (unsubscribeDonations) {
+                unsubscribeDonations();
             }
             render();
         });
 
-        // 2. Real-time Listener
+        // 2. Real-time Listener - FIXED: Added error handling and cleanup
         function setupRealtimeListener() {
+            if (!currentUser) return;
+            
+            // Limpiar suscripción previa si existe
+            if (unsubscribeDonations) unsubscribeDonations();
+
             const donationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'donations');
-            onSnapshot(donationsRef, (snapshot) => {
-                const docs = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    timestamp: doc.data().timestamp?.toDate() || new Date()
-                }));
+            unsubscribeDonations = onSnapshot(donationsRef, (snapshot) => {
+                const docs = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        timestamp: data.timestamp?.toDate() || new Date()
+                    };
+                });
                 
-                // Sort in memory
+                // Sort in memory (Rule 2: No complex queries)
                 allDonations = docs.sort((a, b) => b.timestamp - a.timestamp);
-                
-                // Show notification if it's a new real-time addition
-                if (allDonations.length > 0 && currentView === 'blockchain') {
-                    // Visual refresh
-                    render();
-                }
-            }, (error) => console.error("Firestore Error:", error));
+                render();
+            }, (error) => {
+                console.error("Firestore Permission/Query Error:", error);
+            });
         }
 
         // 3. Navigation & Rendering Logic
@@ -216,7 +228,7 @@
             } catch (error) {
                 console.error("Donate Error:", error);
                 btn.disabled = false;
-                btn.innerText = "FIRMAR DONACIÓN";
+                btn.innerText = "ERROR EN FIRMA";
             }
         }
 
@@ -317,7 +329,7 @@
                                 <div class="w-px h-8 bg-slate-100"></div>
                                 <div class="flex flex-col">
                                     <span class="text-[10px] uppercase font-black text-slate-400">ID Usuario</span>
-                                    <span class="text-[10px] font-mono text-slate-600">${currentUser?.uid.substring(0, 8)}...</span>
+                                    <span class="text-[10px] font-mono text-slate-600">${currentUser?.uid ? currentUser.uid.substring(0, 8) : 'Iniciando...'}...</span>
                                 </div>
                             </div>
                         </header>
@@ -363,10 +375,11 @@
             lucide.createIcons();
         }
 
-        // Initialize
+        // Initialize - FIXED: Sequence ensured
         document.getElementById('current-year').innerText = new Date().getFullYear();
-        initAuth();
-        render();
+        initAuth().then(() => {
+            console.log("Authentication handshake complete.");
+        });
 
     </script>
 </body>
