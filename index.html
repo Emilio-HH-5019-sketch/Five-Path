@@ -4,45 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Five Path CUGDL - Transparencia Blockchain</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        @keyframes slide-in {
-            from { transform: translateX(100%) scale(0.9); opacity: 0; }
-            to { transform: translateX(0) scale(1); opacity: 1; }
-        }
-        .animate-slide-in {
-            animation: slide-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.8s ease-out;
-        }
-        .animate-spin-slow {
-            animation: spin 8s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        [v-cloak] { display: none; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
     <div id="app">
-        <!-- Navbar -->
+        <!-- Navegación -->
         <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('home')">
                 <div class="bg-indigo-600 p-2 rounded-lg text-white">
@@ -50,391 +23,187 @@
                 </div>
                 <span class="text-xl font-bold tracking-tight">Five Path <span class="text-indigo-600">CUGDL</span></span>
             </div>
-            
-            <div class="flex items-center gap-4 md:gap-8 font-medium">
-                <button onclick="navigateTo('home')" class="hidden md:block hover:text-indigo-600 transition-colors">Inicio</button>
-                <button onclick="navigateTo('blockchain')" class="hover:text-indigo-600 transition-colors">Libro Abierto</button>
-                <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-5 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 text-sm md:text-base">
-                    Donar
-                </button>
+            <div class="flex items-center gap-4 font-medium">
+                <button onclick="navigateTo('home')" class="hover:text-indigo-600">Inicio</button>
+                <button onclick="navigateTo('blockchain')" class="hover:text-indigo-600">Libro Abierto</button>
+                <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 shadow-lg">Donar</button>
             </div>
         </nav>
 
-        <!-- Notifications Area -->
-        <div id="notifications-container" class="fixed top-24 right-6 z-[60] flex flex-col gap-3 pointer-events-none"></div>
-
         <main id="main-content" class="max-w-6xl mx-auto px-6 py-12">
-            <!-- Loader inicial -->
-            <div class="flex flex-col items-center justify-center py-20">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                <p class="mt-4 text-slate-500 font-medium italic">Sincronizando con la red...</p>
-            </div>
+            <!-- El contenido se genera dinámicamente -->
         </main>
 
-        <footer class="mt-20 border-t border-slate-200 bg-white py-16 px-6">
-            <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-12">
-                <div class="col-span-2 space-y-6">
-                    <div class="flex items-center gap-2 text-indigo-600">
-                        <i data-lucide="shield-check" size="28"></i>
-                        <span class="text-2xl font-black tracking-tight text-slate-900">Five Path</span>
-                    </div>
-                    <p class="text-slate-500 text-sm leading-relaxed max-w-sm font-medium">
-                        Una iniciativa del CUGDL para redefinir la caridad mediante el uso de bases de datos inmutables y participación ciudadana.
-                    </p>
-                </div>
-                <div class="space-y-4">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-900">Plataforma</h4>
-                    <ul class="text-sm text-slate-500 space-y-3 font-medium">
-                        <li class="hover:text-indigo-600 cursor-pointer transition-colors">Infraestructura</li>
-                        <li class="hover:text-indigo-600 cursor-pointer transition-colors">Seguridad de Datos</li>
-                        <li class="hover:text-indigo-600 cursor-pointer transition-colors">CUGDL Hub</li>
-                    </ul>
-                </div>
-                <div class="space-y-4">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-900">Soporte</h4>
-                    <ul class="text-sm text-slate-500 space-y-3 font-medium">
-                        <li class="hover:text-indigo-600 cursor-pointer transition-colors">Contacto</li>
-                        <li class="hover:text-indigo-600 cursor-pointer transition-colors">Investigación</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="max-w-6xl mx-auto mt-16 pt-8 border-t border-slate-100 text-center">
-                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                    © <span id="current-year"></span> Proyecto Five Path - Centro Universitario de Guadalajara
-                </p>
-            </div>
+        <footer class="mt-20 border-t border-slate-200 bg-white py-10 px-6 text-center">
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                © <span id="current-year"></span> Proyecto Five Path - Centro Universitario de Guadalajara
+            </p>
         </footer>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN DE FIREBASE ---
-        // Intentamos leer del sistema, si no, usamos un objeto vacío para evitar errores de parseo
-        let firebaseConfig = {};
+        // ================================================================
+        // CONFIGURACIÓN PARA GITHUB (IMPORTANTE)
+        // ================================================================
+        // Si estás en GitHub, pega aquí tus credenciales de Firebase.
+        // Si estás en el editor de IA, el código usará las variables automáticas.
+        
+        let firebaseConfig = {
+            apiKey: "", // PEGA AQUÍ TU API KEY SI USAS GITHUB
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        // Fallback para el entorno de IA (No tocar)
         try {
-            firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        } catch (e) {
-            console.warn("Configuración de Firebase no detectada.");
-        }
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {}
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'five-path-cugdl-web';
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'five-path-cugdl';
 
-        // Solo inicializamos si hay configuración válida
+        // Inicialización segura
         let app, auth, db;
-        let isFirebaseReady = false;
+        let isConfigured = false;
 
-        if (firebaseConfig.apiKey) {
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            isFirebaseReady = true;
+            isConfigured = true;
         }
 
-        let currentUser = null;
         let allDonations = [];
         let currentView = 'home';
-        let unsubscribeDonations = null;
+        let user = null;
 
-        // 1. Authentication
-        async function initAuth() {
-            if (!isFirebaseReady) return;
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
-            }
-        }
-
-        if (isFirebaseReady) {
-            onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-                if (user) {
-                    setupRealtimeListener();
-                } else if (unsubscribeDonations) {
-                    unsubscribeDonations();
-                }
+        // Autenticación
+        if (isConfigured) {
+            signInAnonymously(auth).catch(e => console.error("Error Auth:", e));
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (u) listenDonations();
                 render();
             });
-        } else {
-            // Si no hay Firebase, mostramos la UI vacía o de error amable
-            setTimeout(() => render(), 1000);
         }
 
-        // 2. Real-time Listener
-        function setupRealtimeListener() {
-            if (!currentUser || !isFirebaseReady) return;
-            
-            if (unsubscribeDonations) unsubscribeDonations();
-
-            const donationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'donations');
-            unsubscribeDonations = onSnapshot(donationsRef, (snapshot) => {
-                const docs = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        ...data,
-                        timestamp: data.timestamp?.toDate() || new Date()
-                    };
-                });
-                
-                allDonations = docs.sort((a, b) => b.timestamp - a.timestamp);
+        function listenDonations() {
+            if (!db) return;
+            const path = `artifacts/${APP_ID}/public/data/donations`;
+            onSnapshot(collection(db, path), (snap) => {
+                allDonations = snap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    timestamp: doc.data().timestamp?.toDate() || new Date()
+                })).sort((a, b) => b.timestamp - a.timestamp);
                 render();
-            }, (error) => {
-                console.error("Firestore Error:", error);
-                // Si hay error de permisos, mostramos una notificación
-                addNotification("Error de conexión con la base de datos.");
+            }, (err) => {
+                console.error("Error Firestore:", err);
             });
         }
 
-        // 3. UI Logic
-        window.navigateTo = (view) => {
-            currentView = view;
-            render();
-            window.scrollTo(0, 0);
-        };
-
-        function addNotification(msg) {
-            const container = document.getElementById('notifications-container');
-            const id = Date.now();
-            const notification = document.createElement('div');
-            notification.id = `notif-${id}`;
-            notification.className = "bg-white border-l-4 border-indigo-500 shadow-2xl p-4 rounded-r-xl flex items-start gap-3 animate-slide-in max-w-sm pointer-events-auto";
-            notification.innerHTML = `
-                <div class="bg-indigo-50 p-2 rounded-full">
-                    <i data-lucide="bell" class="text-indigo-600 w-4 h-4"></i>
-                </div>
-                <div>
-                    <p class="font-bold text-sm text-slate-800">Sistema</p>
-                    <p class="text-xs text-slate-600 mt-1">${msg}</p>
-                </div>
-            `;
-            container.appendChild(notification);
-            lucide.createIcons();
-            setTimeout(() => {
-                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-                setTimeout(() => notification.remove(), 500);
-            }, 5000);
-        }
+        window.navigateTo = (v) => { currentView = v; render(); };
 
         window.handleDonate = async (e) => {
             e.preventDefault();
-            if (!isFirebaseReady) {
-                addNotification("Firebase no está configurado en este entorno.");
-                return;
-            }
-
-            const name = document.getElementById('don-name').value;
-            const amount = document.getElementById('don-amount').value;
-            const btn = document.getElementById('btn-donate-submit');
-
-            if (!amount || !currentUser) return;
+            if (!isConfigured) return alert("Configura Firebase primero.");
+            
+            const btn = e.target.querySelector('button');
+            const amount = parseFloat(document.getElementById('don-amount').value);
+            const name = document.getElementById('don-name').value || "Anónimo";
 
             btn.disabled = true;
-            btn.innerText = "PROCESANDO BLOQUE...";
-            
+            btn.innerText = "Registrando...";
+
             try {
-                const donationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'donations');
-                const mockHash = '000x' + Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10);
-
-                await addDoc(donationsRef, {
-                    amount: parseFloat(amount),
-                    user: name || 'Donador Anónimo',
+                await addDoc(collection(db, `artifacts/${APP_ID}/public/data/donations`), {
+                    amount,
+                    user: name,
                     timestamp: serverTimestamp(),
-                    hash: mockHash,
-                    minerId: currentUser.uid
+                    hash: 'sha256-' + Math.random().toString(36).substring(2)
                 });
-
-                addNotification("¡Donación registrada en la red!");
                 navigateTo('blockchain');
-            } catch (error) {
-                console.error("Donate Error:", error);
+            } catch (err) {
+                alert("Error de permisos. Revisa las reglas de Firestore.");
                 btn.disabled = false;
-                btn.innerText = "REINTENTAR FIRMA";
-                addNotification("Error al guardar: Verifique permisos.");
+                btn.innerText = "Reintentar";
             }
         };
 
         function render() {
             const main = document.getElementById('main-content');
-            
-            // Si no hay Firebase configurado, mostrar advertencia amigable
-            if (!isFirebaseReady) {
+            document.getElementById('current-year').innerText = new Date().getFullYear();
+
+            if (!isConfigured) {
                 main.innerHTML = `
-                    <div class="bg-amber-50 border border-amber-200 p-8 rounded-[2rem] text-center space-y-4 animate-fade-in">
-                        <i data-lucide="alert-triangle" class="mx-auto text-amber-500 w-12 h-12"></i>
-                        <h2 class="text-xl font-bold text-amber-900">Entorno GitHub detectado</h2>
-                        <p class="text-amber-800 max-w-md mx-auto">
-                            Para ver los datos reales en GitHub, necesitas incluir tu propia configuración de Firebase en el código fuente.
-                        </p>
-                        <div class="pt-4">
-                             <button onclick="navigateTo('home')" class="bg-amber-600 text-white px-6 py-2 rounded-xl font-bold">Explorar Interfaz</button>
-                        </div>
+                    <div class="bg-white p-10 rounded-[2rem] border-2 border-dashed border-slate-200 text-center space-y-4">
+                        <i data-lucide="settings" class="mx-auto w-12 h-12 text-slate-300"></i>
+                        <h2 class="text-xl font-bold">Falta Configuración</h2>
+                        <p class="text-slate-500 text-sm">Para que esto funcione en GitHub, debes pegar tus credenciales de Firebase dentro del código fuente (línea 55).</p>
                     </div>
                 `;
+                lucide.createIcons();
+                return;
             }
 
             if (currentView === 'home') {
-                const totalAmount = allDonations.reduce((acc, d) => acc + d.amount, 0);
                 main.innerHTML = `
-                    <div class="space-y-16 animate-fade-in">
-                        <section class="flex flex-col md:flex-row items-center gap-12 pt-10">
-                            <div class="flex-1 space-y-8 text-center md:text-left">
-                                <div class="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase">
-                                    <i data-lucide="globe" class="w-3 h-3"></i> Red de Transparencia CUGDL
-                                </div>
-                                <h1 class="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1]">
-                                    Cada moneda tiene un <span class="text-indigo-600">Rastro Digital</span>
-                                </h1>
-                                <p class="text-lg text-slate-600 max-w-xl leading-relaxed">
-                                    Eliminamos la duda sobre el destino de tu ayuda. Usamos almacenamiento descentralizado para que tú y el mundo vean el impacto real en las calles de Guadalajara.
-                                </p>
-                                <div class="flex flex-wrap justify-center md:justify-start gap-4">
-                                    <button onclick="navigateTo('donate')" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all">
-                                        Empezar a Ayudar <i data-lucide="arrow-right"></i>
-                                    </button>
-                                    <button onclick="navigateTo('blockchain')" class="bg-white border-2 border-slate-200 px-8 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all">
-                                        Explorar Bloques
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="flex-1 relative w-full">
-                                <div class="absolute -inset-4 bg-indigo-100 rounded-[2.5rem] rotate-2 -z-10 blur-sm"></div>
-                                <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=2070&auto=format&fit=crop" class="rounded-[2rem] shadow-2xl w-full aspect-video object-cover" />
-                            </div>
-                        </section>
-
-                        <div class="grid md:grid-cols-3 gap-6">
-                            <div class="bg-white p-8 rounded-3xl border border-slate-100 text-center shadow-sm">
-                                <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">Donaciones Totales</p>
-                                <p class="text-3xl font-black text-indigo-600">${allDonations.length}</p>
-                            </div>
-                            <div class="bg-white p-8 rounded-3xl border border-slate-100 text-center shadow-sm">
-                                <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">Monto Recaudado</p>
-                                <p class="text-3xl font-black text-green-600">$${totalAmount.toLocaleString()}</p>
-                            </div>
-                            <div class="bg-white p-8 rounded-3xl border border-slate-100 text-center shadow-sm">
-                                <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">Nodos Activos</p>
-                                <p class="text-3xl font-black text-blue-600">43 (CUGDL Cluster)</p>
-                            </div>
+                    <div class="text-center space-y-8 animate-fade-in">
+                        <h1 class="text-5xl font-black">Bienvenido a <span class="text-indigo-600">Five Path</span></h1>
+                        <p class="text-slate-500 max-w-2xl mx-auto">La plataforma de transparencia del CUGDL. Cada donación es un bloque inmutable en nuestra red.</p>
+                        <div class="flex justify-center gap-4">
+                            <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-200">Empezar a Ayudar</button>
+                            <button onclick="navigateTo('blockchain')" class="bg-white border border-slate-200 px-8 py-4 rounded-2xl font-bold">Ver Libro Abierto</button>
                         </div>
                     </div>
                 `;
             } else if (currentView === 'donate') {
                 main.innerHTML = `
-                    <div class="max-w-lg mx-auto py-10 animate-fade-in">
-                        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-slate-100">
-                            <div class="mb-10 text-center">
-                                <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                                    <i data-lucide="heart" class="w-10 h-10 fill-current"></i>
-                                </div>
-                                <h2 class="text-3xl font-extrabold">Nueva Aportación</h2>
-                                <p class="text-slate-500 mt-2">Los datos se almacenarán en el nodo central del CUGDL.</p>
-                            </div>
-
-                            <form onsubmit="handleDonate(event)" class="space-y-6">
-                                <div class="space-y-2">
-                                    <label class="text-sm font-bold text-slate-700 ml-1">Tu Identidad en la Red</label>
-                                    <input id="don-name" type="text" placeholder="Anónimo o Nombre Público" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-sm font-bold text-slate-700 ml-1">Monto (MXN)</label>
-                                    <div class="relative">
-                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                                        <input id="don-amount" type="number" required placeholder="50.00" class="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-lg">
-                                    </div>
-                                </div>
-                                <button id="btn-donate-submit" type="submit" class="w-full py-5 rounded-2xl font-black text-white text-lg tracking-wide shadow-xl transition-all bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] shadow-indigo-200">
-                                    FIRMAR DONACIÓN
-                                </button>
-                            </form>
-                        </div>
+                    <div class="max-w-md mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl animate-fade-in">
+                        <h2 class="text-2xl font-black mb-6 text-center">Nueva Donación</h2>
+                        <form onsubmit="handleDonate(event)" class="space-y-4">
+                            <input id="don-name" type="text" placeholder="Nombre (opcional)" class="w-full p-4 bg-slate-50 rounded-xl outline-none">
+                            <input id="don-amount" type="number" required placeholder="Monto (MXN)" class="w-full p-4 bg-slate-50 rounded-xl outline-none font-bold">
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold">Firmar Transacción</button>
+                        </form>
                     </div>
                 `;
-            } else if (currentView === 'blockchain') {
+            } else {
                 main.innerHTML = `
-                    <div class="space-y-10 animate-fade-in">
-                        <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                            <div>
-                                <h2 class="text-4xl font-black">Libro de Transparencia</h2>
-                                <p class="text-slate-500 mt-1 font-medium italic">Acceso en tiempo real a la base de datos distribuida de Five Path.</p>
+                    <div class="space-y-6 animate-fade-in">
+                        <h2 class="text-3xl font-black">Libro de Transacciones</h2>
+                        ${allDonations.length === 0 ? '<p class="text-slate-400 italic">No hay registros aún...</p>' : 
+                        allDonations.map(d => `
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                                <div>
+                                    <p class="text-xs font-black text-indigo-400 uppercase">Donador</p>
+                                    <p class="font-bold">${d.user}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-black text-green-400 uppercase">Cantidad</p>
+                                    <p class="font-bold">$${d.amount}</p>
+                                </div>
+                                <div class="w-full md:w-auto">
+                                    <p class="text-[10px] font-mono text-slate-400 break-all">${d.hash}</p>
+                                </div>
                             </div>
-                            <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                                <div class="flex flex-col text-right">
-                                    <span class="text-[10px] uppercase font-black text-slate-400">Estado</span>
-                                    <span class="text-xs font-bold text-green-600">${isFirebaseReady ? 'Sincronizado' : 'Sin Conexión'}</span>
-                                </div>
-                                <div class="w-px h-8 bg-slate-100"></div>
-                                <div class="flex flex-col">
-                                    <span class="text-[10px] uppercase font-black text-slate-400">ID Usuario</span>
-                                    <span class="text-[10px] font-mono text-slate-600">${currentUser?.uid ? currentUser.uid.substring(0, 8) : 'Offline'}...</span>
-                                </div>
-                            </div>
-                        </header>
-
-                        <div class="space-y-4">
-                            ${!isFirebaseReady ? `
-                                <div class="py-32 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
-                                    <i data-lucide="cloud-off" class="mx-auto text-slate-300 mb-4 w-12 h-12"></i>
-                                    <p class="text-slate-400 font-bold">Base de datos no vinculada para GitHub.</p>
-                                </div>
-                            ` : allDonations.length === 0 ? `
-                                <div class="py-32 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
-                                    <i data-lucide="globe" class="mx-auto text-slate-200 mb-4 animate-spin-slow w-12 h-12"></i>
-                                    <p class="text-slate-400 font-bold">Consultando la red de bloques...</p>
-                                </div>
-                            ` : allDonations.map(d => `
-                                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                                    <div class="flex flex-col lg:flex-row">
-                                        <div class="bg-slate-50 p-6 lg:w-48 flex flex-col justify-center items-center text-center border-b lg:border-b-0 lg:border-r border-slate-100">
-                                            <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Bloque ID</span>
-                                            <span class="text-xl font-mono font-black text-slate-800 tracking-tighter">#${d.id.substring(0, 6)}</span>
-                                        </div>
-                                        <div class="p-8 flex-1 grid md:grid-cols-3 gap-8 items-center">
-                                            <div>
-                                                <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Donador</p>
-                                                <p class="font-black text-slate-800 flex items-center gap-2">${d.user}</p>
-                                            </div>
-                                            <div>
-                                                <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Valor</p>
-                                                <p class="text-2xl font-black text-green-600">$${d.amount.toFixed(2)}</p>
-                                            </div>
-                                            <div>
-                                                <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Sello</p>
-                                                <p class="text-xs font-bold text-slate-700">${d.timestamp.toLocaleString('es-MX')}</p>
-                                            </div>
-                                        </div>
-                                        <div class="bg-indigo-900/5 p-6 lg:w-72">
-                                            <p class="text-[9px] text-indigo-900/40 font-black uppercase mb-2">Hash Inmutable</p>
-                                            <code class="text-[9px] font-mono text-indigo-600 break-all block bg-white p-2 rounded-lg border border-indigo-100">${d.hash}</code>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
+                        `).join('')}
                     </div>
                 `;
             }
             lucide.createIcons();
         }
 
-        // Initialize
-        document.getElementById('current-year').innerText = new Date().getFullYear();
-        if (isFirebaseReady) {
-            initAuth().then(() => {
-                console.log("Conectado a la red de Five Path.");
-            });
-        } else {
-            render();
-        }
-
+        render();
     </script>
 </body>
 </html>
