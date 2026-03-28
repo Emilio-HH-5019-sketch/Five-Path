@@ -1,0 +1,436 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged,
+  signInWithCustomToken 
+} from 'firebase/auth';
+import { 
+  ShieldCheck, 
+  Heart, 
+  Users, 
+  History, 
+  ArrowRight, 
+  Globe, 
+  Bell, 
+  Info 
+} from 'lucide-react';
+
+// Firebase Configuration
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'five-path-cugdl';
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [donations, setDonations] = useState([]);
+  const [newDonation, setNewDonation] = useState({ amount: '', name: '' });
+  const [notifications, setNotifications] = useState([]);
+  const [view, setView] = useState('home');
+  const [isMining, setIsMining] = useState(false);
+
+  // 1. Manejo de Autenticación
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Error de autenticación:", error);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Escucha de datos en tiempo real (Firestore)
+  useEffect(() => {
+    if (!user) return;
+
+    // Referencia a la colección pública siguiendo las reglas de la plataforma
+    const donationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'donations');
+    
+    // Escuchamos cambios (onSnapshot)
+    const unsubscribe = onSnapshot(donationsRef, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        // Convertimos el timestamp de Firebase a objeto Date de JS
+        timestamp: doc.data().timestamp?.toDate() || new Date()
+      }));
+      
+      // Ordenamos manualmente en memoria (Regla: No usar complex queries como orderBy con filtros si no es necesario)
+      const sortedDocs = docs.sort((a, b) => b.timestamp - a.timestamp);
+      
+      // Si hay una nueva donación y no es la carga inicial, mostrar notificación
+      if (donations.length > 0 && sortedDocs.length > donations.length) {
+        const latest = sortedDocs[0];
+        addNotification(`Nueva donación detectada: $${latest.amount} por ${latest.user}`);
+      }
+      
+      setDonations(sortedDocs);
+    }, (error) => {
+      console.error("Error obteniendo donaciones:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const addNotification = (msg) => {
+    const id = Date.now();
+    setNotifications(prev => [{ id, msg }, ...prev]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 6000);
+  };
+
+  const handleDonate = async (e) => {
+    e.preventDefault();
+    if (!newDonation.amount || !user) return;
+
+    setIsMining(true);
+    
+    try {
+      const donationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'donations');
+      
+      // Simulamos un hash de bloque
+      const mockHash = '000x' + Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10);
+
+      await addDoc(donationsRef, {
+        amount: parseFloat(newDonation.amount),
+        user: newDonation.name || 'Donador Anónimo',
+        timestamp: serverTimestamp(),
+        hash: mockHash,
+        minerId: user.uid
+      });
+
+      setIsMining(false);
+      setNewDonation({ amount: '', name: '' });
+      setView('blockchain');
+      addNotification("¡Donación minada con éxito en la Blockchain!");
+    } catch (error) {
+      console.error("Error al guardar donación:", error);
+      setIsMining(false);
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "...";
+    return date.toLocaleString('es-MX', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+          <div className="bg-indigo-600 p-2 rounded-lg text-white">
+            <ShieldCheck size={24} />
+          </div>
+          <span className="text-xl font-bold tracking-tight">Five Path <span className="text-indigo-600">CUGDL</span></span>
+        </div>
+        
+        <div className="flex items-center gap-4 md:gap-8 font-medium">
+          <button onClick={() => setView('home')} className={`hidden md:block ${view === 'home' ? 'text-indigo-600' : 'hover:text-indigo-600'}`}>Inicio</button>
+          <button onClick={() => setView('blockchain')} className={view === 'blockchain' ? 'text-indigo-600' : 'hover:text-indigo-600'}>Libro Abierto</button>
+          <button 
+            onClick={() => setView('donate')} 
+            className="bg-indigo-600 text-white px-5 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 text-sm md:text-base"
+          >
+            Donar
+          </button>
+        </div>
+      </nav>
+
+      {/* Notifications Area */}
+      <div className="fixed top-24 right-6 z-[60] flex flex-col gap-3 pointer-events-none">
+        {notifications.map(n => (
+          <div key={n.id} className="bg-white border-l-4 border-indigo-500 shadow-2xl p-4 rounded-r-xl flex items-start gap-3 animate-slide-in max-w-sm pointer-events-auto">
+            <div className="bg-indigo-50 p-2 rounded-full">
+              <Bell className="text-indigo-600" size={18} />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-slate-800">Alerta de Red</p>
+              <p className="text-xs text-slate-600 mt-1">{n.msg}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        {view === 'home' && (
+          <div className="space-y-16">
+            <section className="flex flex-col md:flex-row items-center gap-12 pt-10">
+              <div className="flex-1 space-y-8 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase">
+                  <Globe size={14} /> Red de Transparencia CUGDL
+                </div>
+                <h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1]">
+                  Cada moneda tiene un <span className="text-indigo-600">Rastro Digital</span>
+                </h1>
+                <p className="text-lg text-slate-600 max-w-xl leading-relaxed">
+                  Eliminamos la duda sobre el destino de tu ayuda. Usamos almacenamiento descentralizado para que tú y el mundo vean el impacto real en las calles de Guadalajara.
+                </p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                  <button onClick={() => setView('donate')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all">
+                    Empezar a Ayudar <ArrowRight size={20} />
+                  </button>
+                  <button onClick={() => setView('blockchain')} className="bg-white border-2 border-slate-200 px-8 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all">
+                    Explorar Bloques
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 relative w-full">
+                 <div className="absolute -inset-4 bg-indigo-100 rounded-[2.5rem] rotate-2 -z-10 blur-sm"></div>
+                 <img 
+                  src="https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=2070&auto=format&fit=crop" 
+                  alt="Impacto Social" 
+                  className="rounded-[2rem] shadow-2xl w-full aspect-video object-cover"
+                 />
+              </div>
+            </section>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { label: 'Donaciones Totales', value: donations.length, color: 'text-indigo-600' },
+                { label: 'Monto Recaudado', value: `$${donations.reduce((acc, d) => acc + d.amount, 0).toLocaleString()}`, color: 'text-green-600' },
+                { label: 'Nodos Activos', value: '43 (CUGDL Cluster)', color: 'text-blue-600' }
+              ].map((stat, i) => (
+                <div key={i} className="bg-white p-8 rounded-3xl border border-slate-100 text-center shadow-sm">
+                  <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">{stat.label}</p>
+                  <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'donate' && (
+          <div className="max-w-lg mx-auto py-10">
+            <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-slate-100">
+              <div className="mb-10 text-center">
+                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                  <Heart size={40} fill="currentColor" />
+                </div>
+                <h2 className="text-3xl font-extrabold">Nueva Aportación</h2>
+                <p className="text-slate-500 mt-2">Los datos se almacenarán en el nodo central del CUGDL.</p>
+              </div>
+
+              <form onSubmit={handleDonate} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 ml-1">Tu Identidad en la Red</label>
+                  <input 
+                    type="text"
+                    placeholder="Anónimo o Nombre Público"
+                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
+                    value={newDonation.name}
+                    onChange={(e) => setNewDonation({...newDonation, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 ml-1">Monto (MXN)</label>
+                  <div className="relative">
+                    <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                    <input 
+                      type="number"
+                      required
+                      placeholder="50.00"
+                      className="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-lg"
+                      value={newDonation.amount}
+                      onChange={(e) => setNewDonation({...newDonation, amount: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  disabled={isMining || !user}
+                  className={`w-full py-5 rounded-2xl font-black text-white text-lg tracking-wide shadow-xl transition-all ${
+                    isMining ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] shadow-indigo-200'
+                  }`}
+                >
+                  {isMining ? 'VALIDANDO TRANSACCIÓN...' : 'FIRMAR DONACIÓN'}
+                </button>
+              </form>
+
+              <div className="mt-8 flex gap-3 p-4 bg-indigo-50/50 rounded-2xl">
+                <ShieldCheck className="text-indigo-600 shrink-0" size={20} />
+                <p className="text-[11px] text-indigo-800 leading-relaxed font-medium">
+                  Esta acción es irreversible una vez confirmada. El hash resultante se distribuirá a todos los observadores de la red.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'blockchain' && (
+          <div className="space-y-10 animate-fade-in">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div>
+                <h2 className="text-4xl font-black">Libro de Transparencia</h2>
+                <p className="text-slate-500 mt-1 font-medium italic">Acceso en tiempo real a la base de datos distribuida de Five Path.</p>
+              </div>
+              <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">Estado del Nodo</span>
+                  <span className="text-xs font-bold text-green-600 flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div> Sincronizado
+                  </span>
+                </div>
+                <div className="w-px h-8 bg-slate-100"></div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">ID Usuario</span>
+                  <span className="text-[10px] font-mono text-slate-600">{user?.uid.substring(0, 12)}...</span>
+                </div>
+              </div>
+            </header>
+
+            <div className="space-y-4">
+              {donations.length === 0 ? (
+                <div className="py-32 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
+                  <Globe size={48} className="mx-auto text-slate-200 mb-4 animate-spin-slow" />
+                  <p className="text-slate-400 font-bold">Consultando la red de bloques...</p>
+                </div>
+              ) : (
+                donations.map((d, index) => (
+                  <div key={d.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+                    <div className="flex flex-col lg:flex-row">
+                      {/* Cabecera del bloque */}
+                      <div className="bg-slate-50 p-6 lg:w-48 flex flex-col justify-center items-center text-center border-b lg:border-b-0 lg:border-r border-slate-100">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Index de Nodo</span>
+                        <span className="text-xl font-mono font-black text-slate-800 tracking-tighter">#{d.id.substring(0,6)}</span>
+                        <div className="mt-4 px-3 py-1 bg-white rounded-full border border-slate-200 text-[10px] font-bold text-slate-500">
+                          {d.amount > 100 ? 'Bloque Oro' : 'Bloque Estándar'}
+                        </div>
+                      </div>
+
+                      {/* Info de la donación */}
+                      <div className="p-8 flex-1 grid md:grid-cols-3 gap-8 items-center">
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Donador / Wallet</p>
+                          <p className="font-black text-slate-800 flex items-center gap-2">
+                            <Users size={16} className="text-indigo-400" />
+                            {d.user}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Valor de Activo</p>
+                          <p className="text-2xl font-black text-green-600">${d.amount.toFixed(2)} <span className="text-xs font-bold text-slate-400">MXN</span></p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Sello de Tiempo</p>
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-2">
+                            <History size={14} className="text-slate-400" />
+                            {formatDate(d.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Hash y Validación */}
+                      <div className="bg-indigo-900/5 p-6 lg:w-72 flex flex-col justify-center">
+                         <p className="text-[9px] text-indigo-900/40 font-black uppercase tracking-widest mb-2">Hash de Verificación Inmutable</p>
+                         <div className="bg-white p-3 rounded-xl border border-indigo-100 mb-3 overflow-hidden">
+                            <code className="text-[9px] font-mono text-indigo-600 break-all leading-none block">
+                              {d.hash}
+                            </code>
+                         </div>
+                         <div className="flex items-center gap-2">
+                            <div className="bg-green-100 text-green-700 p-1 rounded-md">
+                               <ShieldCheck size={12} />
+                            </div>
+                            <span className="text-[10px] font-black text-green-700 tracking-wide uppercase">Consenso Alcanzado</span>
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+
+      <footer className="mt-20 border-t border-slate-200 bg-white py-16 px-6">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-12">
+          <div className="col-span-2 space-y-6">
+            <div className="flex items-center gap-2 text-indigo-600">
+              <ShieldCheck size={28} />
+              <span className="text-2xl font-black tracking-tight text-slate-900">Five Path</span>
+            </div>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-sm font-medium">
+              Una iniciativa del CUGDL para redefinir la caridad mediante el uso de bases de datos inmutables y participación ciudadana.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900">Plataforma</h4>
+            <ul className="text-sm text-slate-500 space-y-3 font-medium">
+              <li className="hover:text-indigo-600 cursor-pointer transition-colors">Infraestructura</li>
+              <li className="hover:text-indigo-600 cursor-pointer transition-colors">Seguridad de Datos</li>
+              <li className="hover:text-indigo-600 cursor-pointer transition-colors">CUGDL Hub</li>
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-900">Soporte</h4>
+            <ul className="text-sm text-slate-500 space-y-3 font-medium">
+              <li className="hover:text-indigo-600 cursor-pointer transition-colors">Contacto</li>
+              <li className="hover:text-indigo-600 cursor-pointer transition-colors">Investigación</li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-slate-100 text-center">
+          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+            © {new Date().getFullYear()} Proyecto Five Path - Centro Universitario de Guadalajara
+          </p>
+        </div>
+      </footer>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes slide-in {
+          from { transform: translateX(100%) scale(0.9); opacity: 0; }
+          to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        .animate-slide-in {
+          animation: slide-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out;
+        }
+        .animate-spin-slow {
+          animation: spin 8s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}} />
+    </div>
+  );
+};
+
+export default App;
