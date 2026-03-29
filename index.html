@@ -6,6 +6,9 @@
     <title>Five Path CUGDL - Transparencia Blockchain</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -15,7 +18,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
     <div id="app">
-        <!-- Navegación -->
         <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('home')">
                 <div class="bg-indigo-600 p-2 rounded-lg text-white">
@@ -26,13 +28,12 @@
             <div class="flex items-center gap-4 font-medium">
                 <button onclick="navigateTo('home')" class="hover:text-indigo-600">Inicio</button>
                 <button onclick="navigateTo('blockchain')" class="hover:text-indigo-600">Libro Abierto</button>
-                <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 shadow-lg">Donar</button>
+                <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 shadow-lg transition transform hover:scale-105">Donar</button>
             </div>
         </nav>
 
         <main id="main-content" class="max-w-6xl mx-auto px-6 py-12">
-            <!-- El contenido se genera dinámicamente -->
-        </main>
+            </main>
 
         <footer class="mt-20 border-t border-slate-200 bg-white py-10 px-6 text-center">
             <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">
@@ -41,164 +42,145 @@
         </footer>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ================================================================
-        // CONFIGURACIÓN PARA GITHUB (IMPORTANTE)
-        // ================================================================
-        // Si estás en GitHub, pega aquí tus credenciales de Firebase.
-        // Si estás en el editor de IA, el código usará las variables automáticas.
-        
-        let firebaseConfig = {
-            apiKey: "", // PEGA AQUÍ TU API KEY SI USAS GITHUB
-            authDomain: "",
-            projectId: "",
-            storageBucket: "",
-            messagingSenderId: "",
-            appId: ""
-        };
-
-        // Fallback para el entorno de IA (No tocar)
-        try {
-            if (typeof __firebase_config !== 'undefined') {
-                firebaseConfig = JSON.parse(__firebase_config);
-            }
-        } catch (e) {}
-
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'five-path-cugdl';
-
-        // Inicialización segura
-        let app, auth, db;
-        let isConfigured = false;
-
-        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            isConfigured = true;
-        }
-
-        let allDonations = [];
+    <script>
         let currentView = 'home';
-        let user = null;
-
-        // Autenticación
-        if (isConfigured) {
-            signInAnonymously(auth).catch(e => console.error("Error Auth:", e));
-            onAuthStateChanged(auth, (u) => {
-                user = u;
-                if (u) listenDonations();
-                render();
-            });
-        }
-
-        function listenDonations() {
-            if (!db) return;
-            const path = `artifacts/${APP_ID}/public/data/donations`;
-            onSnapshot(collection(db, path), (snap) => {
-                allDonations = snap.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    timestamp: doc.data().timestamp?.toDate() || new Date()
-                })).sort((a, b) => b.timestamp - a.timestamp);
-                render();
-            }, (err) => {
-                console.error("Error Firestore:", err);
-            });
-        }
+        let allDonations = JSON.parse(localStorage.getItem('fivepath_donations')) || [
+            { user: "Sistema (Génesis)", amount: 0, hash: "sha256-cugdl-initial-block-2024", timestamp: new Date().toLocaleString() }
+        ];
 
         window.navigateTo = (v) => { currentView = v; render(); };
 
-        window.handleDonate = async (e) => {
+        window.handleDonate = (e) => {
             e.preventDefault();
-            if (!isConfigured) return alert("Configura Firebase primero.");
-            
-            const btn = e.target.querySelector('button');
-            const amount = parseFloat(document.getElementById('don-amount').value);
+            const amount = document.getElementById('don-amount').value;
             const name = document.getElementById('don-name').value || "Anónimo";
 
-            btn.disabled = true;
-            btn.innerText = "Registrando...";
+            const newDonation = {
+                user: name,
+                amount: parseFloat(amount),
+                timestamp: new Date().toLocaleString(),
+                hash: 'sha256-' + btoa(Math.random().toString()).substring(0, 24).toLowerCase()
+            };
 
-            try {
-                await addDoc(collection(db, `artifacts/${APP_ID}/public/data/donations`), {
-                    amount,
-                    user: name,
-                    timestamp: serverTimestamp(),
-                    hash: 'sha256-' + Math.random().toString(36).substring(2)
-                });
-                navigateTo('blockchain');
-            } catch (err) {
-                alert("Error de permisos. Revisa las reglas de Firestore.");
-                btn.disabled = false;
-                btn.innerText = "Reintentar";
-            }
+            allDonations.unshift(newDonation);
+            localStorage.setItem('fivepath_donations', JSON.stringify(allDonations));
+            navigateTo('blockchain');
+        };
+
+        // Función para generar el PDF
+        window.exportToPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Configuración estética del PDF
+            doc.setFontSize(18);
+            doc.setTextColor(79, 70, 229); // Color Indigo-600
+            doc.text("Reporte de Transparencia - Five Path CUGDL", 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Fecha de exportación: ${new Date().toLocaleString()}`, 14, 28);
+            doc.text("Este documento es un comprobante de integridad de las donaciones registradas.", 14, 33);
+
+            // Crear la tabla
+            const tableData = allDonations.map(d => [d.timestamp, d.user, `$${d.amount}`, d.hash]);
+            
+            doc.autoTable({
+                startY: 40,
+                head: [['Fecha', 'Donador', 'Monto', 'Hash de Seguridad']],
+                body: tableData,
+                headStyles: { fillStyle: 'f3f4f6', textColor: [31, 41, 55], fontStyle: 'bold' },
+                alternateRowStyles: { fillStyle: 'f9fafb' },
+                margin: { top: 40 }
+            });
+
+            doc.save(`Reporte-FivePath-CUGDL.pdf`);
         };
 
         function render() {
             const main = document.getElementById('main-content');
             document.getElementById('current-year').innerText = new Date().getFullYear();
 
-            if (!isConfigured) {
-                main.innerHTML = `
-                    <div class="bg-white p-10 rounded-[2rem] border-2 border-dashed border-slate-200 text-center space-y-4">
-                        <i data-lucide="settings" class="mx-auto w-12 h-12 text-slate-300"></i>
-                        <h2 class="text-xl font-bold">Falta Configuración</h2>
-                        <p class="text-slate-500 text-sm">Para que esto funcione en GitHub, debes pegar tus credenciales de Firebase dentro del código fuente (línea 55).</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
             if (currentView === 'home') {
                 main.innerHTML = `
-                    <div class="text-center space-y-8 animate-fade-in">
-                        <h1 class="text-5xl font-black">Bienvenido a <span class="text-indigo-600">Five Path</span></h1>
-                        <p class="text-slate-500 max-w-2xl mx-auto">La plataforma de transparencia del CUGDL. Cada donación es un bloque inmutable en nuestra red.</p>
-                        <div class="flex justify-center gap-4">
-                            <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-200">Empezar a Ayudar</button>
-                            <button onclick="navigateTo('blockchain')" class="bg-white border border-slate-200 px-8 py-4 rounded-2xl font-bold">Ver Libro Abierto</button>
+                    <div class="text-center space-y-8 animate-fade-in py-10">
+                        <div class="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                            </span>
+                            Blockchain Educativo
                         </div>
-                    </div>
-                `;
+                        <h1 class="text-6xl font-black tracking-tight leading-tight">Transparencia que<br><span class="text-indigo-600 underline decoration-indigo-200">construye confianza.</span></h1>
+                        <p class="text-slate-500 max-w-xl mx-auto text-lg">Prototipo de libro abierto para el Centro Universitario de Guadalajara. Registra, verifica y descarga cada movimiento de forma inmutable.</p>
+                        <div class="flex justify-center gap-4 pt-4">
+                            <button onclick="navigateTo('donate')" class="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-bold shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition">Hacer Donación Simulada</button>
+                            <button onclick="navigateTo('blockchain')" class="bg-white border border-slate-200 px-10 py-5 rounded-2xl font-bold hover:bg-slate-50 transition">Ver Libro Mayor</button>
+                        </div>
+                    </div>`;
             } else if (currentView === 'donate') {
                 main.innerHTML = `
-                    <div class="max-w-md mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl animate-fade-in">
-                        <h2 class="text-2xl font-black mb-6 text-center">Nueva Donación</h2>
-                        <form onsubmit="handleDonate(event)" class="space-y-4">
-                            <input id="don-name" type="text" placeholder="Nombre (opcional)" class="w-full p-4 bg-slate-50 rounded-xl outline-none">
-                            <input id="don-amount" type="number" required placeholder="Monto (MXN)" class="w-full p-4 bg-slate-50 rounded-xl outline-none font-bold">
-                            <button type="submit" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold">Firmar Transacción</button>
+                    <div class="max-w-md mx-auto bg-white p-10 rounded-[3rem] shadow-2xl animate-fade-in border border-slate-100">
+                        <h2 class="text-3xl font-black mb-2 text-center">Donar</h2>
+                        <p class="text-slate-400 text-center mb-8 text-sm">Tu transacción será firmada digitalmente.</p>
+                        <form onsubmit="handleDonate(event)" class="space-y-6">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identidad</label>
+                                <input id="don-name" type="text" placeholder="Nombre o pseudónimo" class="w-full mt-1 p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 ring-indigo-500/20 border border-transparent focus:border-indigo-100 transition">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto de Apoyo (MXN)</label>
+                                <input id="don-amount" type="number" required placeholder="0.00" class="w-full mt-1 p-4 bg-slate-50 rounded-2xl outline-none font-bold text-xl focus:ring-2 ring-indigo-500/20 border border-transparent focus:border-indigo-100 transition">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95">Firmar Transacción</button>
                         </form>
-                    </div>
-                `;
+                    </div>`;
             } else {
                 main.innerHTML = `
-                    <div class="space-y-6 animate-fade-in">
-                        <h2 class="text-3xl font-black">Libro de Transacciones</h2>
-                        ${allDonations.length === 0 ? '<p class="text-slate-400 italic">No hay registros aún...</p>' : 
-                        allDonations.map(d => `
-                            <div class="bg-white p-6 rounded-2xl border border-slate-200 flex flex-wrap justify-between items-center gap-4">
-                                <div>
-                                    <p class="text-xs font-black text-indigo-400 uppercase">Donador</p>
-                                    <p class="font-bold">${d.user}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-black text-green-400 uppercase">Cantidad</p>
-                                    <p class="font-bold">$${d.amount}</p>
-                                </div>
-                                <div class="w-full md:w-auto">
-                                    <p class="text-[10px] font-mono text-slate-400 break-all">${d.hash}</p>
-                                </div>
+                    <div class="space-y-8 animate-fade-in">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-4xl font-black tracking-tight">Libro Mayor</h2>
+                                <p class="text-slate-500">Registros locales guardados en el navegador.</p>
                             </div>
-                        `).join('')}
-                    </div>
-                `;
+                            <div class="flex gap-3">
+                                <button onclick="exportToPDF()" class="flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-600 transition shadow-lg shadow-emerald-100">
+                                    <i data-lucide="download" class="w-4 h-4"></i> Exportar PDF
+                                </button>
+                                <button onclick="if(confirm('¿Deseas resetear el historial local?')){localStorage.removeItem('fivepath_donations'); location.reload();}" class="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:text-red-500 transition">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid gap-4">
+                            ${allDonations.map(d => `
+                                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-wrap justify-between items-center gap-6 hover:border-indigo-100 transition group">
+                                    <div class="flex gap-5 items-center">
+                                        <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                            <i data-lucide="database" class="w-6 h-6"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-[10px] font-black text-slate-300 uppercase tracking-tighter">Origen</p>
+                                            <p class="font-bold text-slate-800">${d.user}</p>
+                                            <p class="text-[10px] text-slate-400">${d.timestamp}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[10px] font-black text-emerald-400 uppercase">Estado: Verificado</p>
+                                        <p class="font-black text-2xl text-slate-900">$${d.amount}</p>
+                                    </div>
+                                    <div class="w-full lg:w-1/3 bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
+                                        <div class="flex justify-between mb-1">
+                                            <p class="text-[9px] font-black text-slate-400 uppercase">Digital Signature (Hash)</p>
+                                            <i data-lucide="lock" class="w-3 h-3 text-slate-300"></i>
+                                        </div>
+                                        <p class="text-[10px] font-mono text-indigo-400 break-all leading-tight uppercase font-bold">${d.hash}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
             }
             lucide.createIcons();
         }
